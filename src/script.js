@@ -1,7 +1,10 @@
+import React from "react";
+import { MessageLog } from "./Component/MessageLog";
 const tmi = require("tmi.js");
-class Script {
-  constructor() {
-    this.msgLog = [];
+class Script extends React.Component {
+  constructor(msgLog) {
+    super(msgLog);
+    console.log(msgLog);
     this.opts = {
       connection: {
         secure: true,
@@ -11,6 +14,7 @@ class Script {
         password: process.env.REACT_APP_OATH_CODE,
       },
       channels: [process.env.REACT_APP_CHANNEL],
+      messages: msgLog,
     };
     this.client = new tmi.client(this.opts);
   }
@@ -22,41 +26,58 @@ class Script {
   disconnect() {
     this.client.disconnect();
   }
-  
+
+  handleDisconnect() {
+    console.log("disconnected");
+    this.opts.messages.push("Disconnected from server");
+  }
+
   //handler functions
   handleConnect(addr) {
-    console.log(this.msgLog)
     console.log(`Connected to ${addr}`);
-    // this.msgLog.push(`Connected to ${addr}`);
-    if (this.msgLog) {
-      this.msgLog.push("Connected to the server");
-    }
+    this.opts.messages.push("Connected to Server");
   }
 
   handleRaid(channel, username, viewers) {
-    console.log(`${username} raided the channel with ${viewers} viewers!`);
-    this.msgLog.push(`${username} raided the channel with ${viewers} viewers!`);
+    // console.log(`${username} raided the channel with ${viewers} viewers!`);
+    this.opts.messages.push(
+      `${username} raided the channel with ${viewers} viewers!`
+    );
+    // console.log(this.msgLog);
     // setTimeout(() => {
     //   client.say(channel, `!so @${username}`);
     // }, Math.floor(Math.random() * 5000));
   }
 
   handleSub(channel, username) {
-    console.log(`${username} just subbed!`);
-    this.msgLog.push(`${username} just subbed!`);
+    // console.log(`${username} just subbed!`);
+    this.opts.messages.push(`${username} just subbed!`);
+    // console.log(this.msgLog);
     // setTimeout(() => {
     //   client.say(channel, "!sh");
     // }, Math.floor(Math.random() * 5000));
   }
 
+  handleMessage(channel, user, message, self) {
+    this.opts.messages.push(message);    
+  }
+  printLog() {
+    return this.opts.messages.map((item) => {
+      return <p>{item}</p>;
+    });
+  }
+
   //event handlers
   handler() {
     this.client.on("connected", this.handleConnect);
+    this.client.on('connected', this.printLog);
+    this.client.on("disconnect", this.handleDisconnect);
     this.client.on("raided", this.handleRaid);
     this.client.on("resub", this.handleSub);
     this.client.on("subgift", this.handleSub);
-    this.client.on("submysterygift", this.handleSub);
+    // this.client.on("submysterygift", this.handleSub);
     this.client.on("subscription", this.handleSub);
+    this.client.on("message", this.handleMessage);
   }
 }
 export default Script;
